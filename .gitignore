@@ -1,0 +1,16 @@
+# Build output
+*.exe
+*.exe~
+
+# Local app data (never commit API keys or indexes)
+config.json
+index.gob
+index.gob.tmp
+thumbs/
+webview/
+
+# Editors / OS
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
