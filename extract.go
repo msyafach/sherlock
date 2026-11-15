@@ -95,26 +95,20 @@ func buildReq(path, root string, size int64) (req EmbedReq, mode string) {
 		if size > 200<<20 {
 			break
 		}
-		t := strings.TrimSpace(pdfText(path))
-		// Page 1 as an image + the text in one aggregated embedding: layout, logos, stamps and
-		// scanned pages count too. Text is trimmed so image + text stay under the 8k token limit.
+		// Page 1 as an image only: mixing in the text dilutes the vector, so the page's look
+		// (layout, logos, stamps, scans) is what gets embedded. Text is only a fallback.
 		img, err := renderPDFPage1(path, 1024)
 		if err != nil && os.Getenv("SHERLOCK_DEBUG") == "1" {
 			fmt.Fprintf(os.Stderr, "render %s: %v\n", name, err)
 		}
 		if err == nil {
 			if jpg, err := encodeJPEG(img, 85); err == nil {
-				txt := cleanName(name)
-				if t != "" {
-					txt += "\n\n" + truncateTo(t, 12000)
-				}
 				return EmbedReq{Content: Content{Parts: []Part{
-					{Text: txt},
 					{InlineData: &Blob{MimeType: "image/jpeg", Data: base64.StdEncoding.EncodeToString(jpg)}},
 				}}}, "visual"
 			}
 		}
-		if t != "" {
+		if t := strings.TrimSpace(pdfText(path)); t != "" {
 			return textReq(t), "konten"
 		}
 	case "dokumen":

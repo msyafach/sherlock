@@ -7,7 +7,7 @@ A small Windows app that lets you find files on your PC by describing what's in 
 Sherlock indexes a folder once, stores the embeddings locally, and then searches by meaning instead of by file name. Images are embedded as images, so a search for "diagram" finds a picture of a diagram even if the file is called `IMG_2041.png`.
 
 - **Single `.exe`, about 18 MB.** It's written in Go with a native WebView2 window, and PDFium (Chrome's PDF engine) is built in as WebAssembly, so you don't need to install a runtime.
-- **Multimodal.** Images are embedded as images. PDFs are embedded as an image of page 1 together with their text, so scanned PDFs are found too. Word, Excel, PowerPoint, CSV and text files are embedded by their text. Programs, video and audio are embedded by their name and folder.
+- **Multimodal.** Images are embedded as images. PDFs are embedded as an image of page 1 only, so scanned PDFs are found too and the vector isn't diluted by long text (their text is used only if page 1 can't be rendered). Word, Excel, PowerPoint, CSV and text files are embedded by their text. Programs, video and audio are embedded by their name and folder.
 - **Page-1 previews.** Results show a thumbnail of the image or of the first page of a PDF. Word, Excel and PowerPoint files are rendered through your installed Microsoft Office (hidden and read-only, and it never closes documents you have open). Without Office, Sherlock uses the preview stored in the file, or typesets the document's opening text on a page.
 - **Incremental.** When you run the index again, only new or changed files are sent. Progress is saved as it goes, so an interrupted run picks up where it stopped.
 - **API key rotation.** You can add as many Gemini API keys as you like. Sherlock uses them in turn and moves to the next key when one hits its rate limit or daily quota.
@@ -56,12 +56,12 @@ Run the application with the following command:
 | Type | Extensions | Embedded as |
 |---|---|---|
 | Images | png, jpg, jpeg, jfif, webp, gif, bmp | the image itself |
-| PDF | pdf | image of page 1 + text from the first 15 pages |
+| PDF | pdf | image of page 1 (text if the page can't be rendered) |
 | Documents | docx, xlsx, xlsm, csv, pptx, txt, md, rtf, odt, ods, odp, epub | extracted text |
 | Programs | exe, msi, msix | file name and folder |
 | Video and audio | mp4, mkv, mov, avi, webm, wmv, mp3, wav, m4a, flac, ogg, aac | file name and folder |
 
-All other file types are skipped. Legacy `.doc`/`.xls`/`.ppt` files are embedded by name only, though they still get a page-1 preview when Office is installed. If you indexed PDFs with v1.0, they are re-embedded with their page image the next time you index.
+All other file types are skipped. Legacy `.doc`/`.xls`/`.ppt` files are embedded by name only, though they still get a page-1 preview when Office is installed. If you indexed PDFs with an earlier version, they are re-embedded from their page-1 image the next time you index.
 
 ### Quota
 

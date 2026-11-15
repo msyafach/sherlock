@@ -23,8 +23,8 @@ type Entry struct {
 	Vec     []float32
 }
 
-// indexVersion 2: PDFs are embedded with an image of page 1 (re-embed older PDF entries once).
-const indexVersion = 2
+// indexVersion 3: PDFs are embedded from an image of page 1 only (re-embed older PDF entries once).
+const indexVersion = 3
 
 type Index struct {
 	Model   string
@@ -58,7 +58,7 @@ func LoadStore(path string) *Store {
 		defer f.Close()
 		var idx Index
 		if gob.NewDecoder(f).Decode(&idx) == nil && idx.Entries != nil {
-			if idx.Version < 2 {
+			if idx.Version < indexVersion {
 				for p, e := range idx.Entries {
 					if e.Kind == "pdf" {
 						delete(idx.Entries, p)
