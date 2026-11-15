@@ -23,9 +23,13 @@ type Entry struct {
 	Vec     []float32
 }
 
+// indexVersion 2: PDFs are embedded with an image of page 1 (re-embed older PDF entries once).
+const indexVersion = 2
+
 type Index struct {
 	Model   string
 	Dim     int
+	Version int
 	Entries map[string]*Entry
 }
 
@@ -49,11 +53,19 @@ type Store struct {
 }
 
 func LoadStore(path string) *Store {
-	s := &Store{path: path, idx: &Index{Entries: map[string]*Entry{}}}
+	s := &Store{path: path, idx: &Index{Version: indexVersion, Entries: map[string]*Entry{}}}
 	if f, err := os.Open(path); err == nil {
 		defer f.Close()
 		var idx Index
 		if gob.NewDecoder(f).Decode(&idx) == nil && idx.Entries != nil {
+			if idx.Version < 2 {
+				for p, e := range idx.Entries {
+					if e.Kind == "pdf" {
+						delete(idx.Entries, p)
+					}
+				}
+			}
+			idx.Version = indexVersion
 			s.idx = &idx
 		}
 	}
@@ -161,7 +173,7 @@ func (s *Store) StartIndex(root string, c *Client) error {
 	s.cancel = cancel
 	s.status = Status{Running: true, Message: "Memindai folder..."}
 	if s.idx.Model != c.Model || s.idx.Dim != c.Dim {
-		s.idx = &Index{Model: c.Model, Dim: c.Dim, Entries: map[string]*Entry{}}
+		s.idx = &Index{Model: c.Model, Dim: c.Dim, Version: indexVersion, Entries: map[string]*Entry{}}
 	}
 	s.mu.Unlock()
 	c.OnWait = func(d time.Duration) {

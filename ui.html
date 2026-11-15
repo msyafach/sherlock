@@ -68,6 +68,8 @@ main:not(.empty) .hero { display: none; }
 .thumb img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; opacity: 0; transition: opacity .25s; }
 .acts { z-index: 1; }
 .thumb img.ok { opacity: 1; }
+.thumb img.page { object-position: top center; }
+.thumb:has(img.page.ok) { background: #fff; }
 .tile {
   position: absolute; inset: 0; display: grid; place-items: center; background: var(--hover);
 }
@@ -261,9 +263,10 @@ function render() {
   if (!results.length) { $('results').innerHTML = `<div class="nores">Tidak ada hasil.</div>`; return; }
   $('results').innerHTML = results.map((r, i) => {
     const ext = (r.name.includes('.') ? r.name.split('.').pop() : 'file').slice(0, 5);
-    const media = r.kind === 'gambar'
-      ? `<div class="tile"><span>${esc(ext)}</span></div><img loading="lazy" alt="" src="/api/thumb?t=${token}&p=${encodeURIComponent(r.path)}" onload="this.classList.add('ok')" onerror="this.remove()">`
-      : `<div class="tile"><span>${esc(ext)}</span></div>`;
+    const isPage = r.kind === 'pdf' || r.kind === 'dokumen';
+    const media = `<div class="tile"><span>${esc(ext)}</span></div>` + (r.kind === 'gambar' || isPage
+      ? `<img loading="lazy" alt="" class="${isPage ? 'page' : ''}" src="/api/thumb?t=${token}&p=${encodeURIComponent(r.path)}" onload="this.classList.add('ok')" onerror="this.remove()">`
+      : '');
     return `<div class="card${i === sel ? ' sel' : ''}" data-i="${i}" title="${esc(r.path)}&#10;${fmtSize(r.size)}${r.mode === 'nama' ? ' · dicari dari nama saja' : ''}">
       <div class="thumb">${media}<div class="acts"><button class="act" data-a="reveal">Lokasi</button><button class="act" data-a="open">Buka</button></div></div>
       <div class="info"><div class="name">${esc(r.name)}</div>

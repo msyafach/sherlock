@@ -154,6 +154,7 @@ func main() {
 	}
 	a.loadConfig()
 	a.store = LoadStore(filepath.Join(a.dir, "index.gob"))
+	startOffice(filepath.Join(a.dir, "tmp"))
 	a.store.SetExcluded(a.cfg.Exclude)
 
 	if *indexDir != "" || *query != "" {
@@ -187,6 +188,7 @@ func main() {
 			w.Navigate(url)
 			w.Run()
 			a.store.Cancel()
+			stopOffice()
 			time.Sleep(300 * time.Millisecond)
 			return
 		}
@@ -309,7 +311,7 @@ func (a *App) routes(token string) http.Handler {
 	// Thumbnails: <img> tags can't send headers, so the token rides in the query string.
 	mux.HandleFunc("/api/thumb", func(w http.ResponseWriter, r *http.Request) {
 		p := r.URL.Query().Get("p")
-		if r.URL.Query().Get("t") != token || !a.store.Has(p) || kindOf(p) != "gambar" {
+		if r.URL.Query().Get("t") != token || !a.store.Has(p) || !hasPreview(p) {
 			http.NotFound(w, r)
 			return
 		}
