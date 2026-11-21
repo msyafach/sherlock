@@ -391,6 +391,7 @@ type Result struct {
 	Kind  string  `json:"kind"`
 	Mode  string  `json:"mode"`
 	Size  int64   `json:"size"`
+	MTime int64   `json:"mtime"`
 	Score float32 `json:"score"`
 }
 
@@ -421,7 +422,7 @@ func (s *Store) Search(qv []float32, query, kind string, limit int) []Result {
 				dot += 0.04
 			}
 		}
-		res = append(res, Result{Path: e.Path, Name: filepath.Base(e.Path), Dir: filepath.Dir(e.Path), Kind: e.Kind, Mode: e.Mode, Size: e.Size, Score: dot})
+		res = append(res, Result{Path: e.Path, Name: filepath.Base(e.Path), Dir: filepath.Dir(e.Path), Kind: e.Kind, Mode: e.Mode, Size: e.Size, MTime: e.ModTime, Score: dot})
 	}
 	sort.Slice(res, func(i, j int) bool { return res[i].Score > res[j].Score })
 	if len(res) > limit {

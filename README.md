@@ -12,7 +12,7 @@ Sherlock indexes a folder once, stores the embeddings locally, and then searches
 - **Incremental.** When you run the index again, only new or changed files are sent. Progress is saved as it goes, so an interrupted run picks up where it stopped.
 - **API key rotation.** You can add as many Gemini API keys as you like. Sherlock uses them in turn and moves to the next key when one hits its rate limit or daily quota.
 - **Excluded folders.** You can skip folders that hold datasets, source code or game data, so they don't use up your quota or clutter the results.
-- **Gallery results** with image thumbnails, filters by type, and keyboard navigation.
+- **Gallery results** with image thumbnails, filters by type, and keyboard navigation. You can sort by newest, oldest, name or size; similarity still comes first, so a sort only reorders the 20 most similar results.
 - **Always at hand.** Press **Alt+Space** anywhere in Windows to bring Sherlock up with the search box focused. Minimizing or closing the window keeps Sherlock running in the notification area (tray).
 
 ## Installation

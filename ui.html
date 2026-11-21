@@ -70,7 +70,15 @@ main.empty .filters { justify-content: center; }
 .chip:hover { color: var(--text); background: var(--hover); }
 .chip.on { background: var(--accent); color: var(--accent-text); }
 
-.meta { color: var(--faint); font-size: 12px; padding: 10px 2px 12px; min-height: 40px; font-variant-numeric: tabular-nums; }
+.resbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 40px; }
+.meta { color: var(--faint); font-size: 12px; padding: 10px 2px 12px; font-variant-numeric: tabular-nums; }
+.sort { display: inline-flex; align-items: center; gap: 6px; color: var(--faint); font-size: 12px; }
+.sort select { appearance: none; -webkit-appearance: none; background: transparent; border: 0; padding: 4px 18px 4px 4px; border-radius: 6px; color: var(--text); font-size: 12px; cursor: pointer;
+  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position: right 8px center, right 4px center; background-size: 4px 4px; background-repeat: no-repeat; }
+.sort select:hover { background-color: var(--hover); }
+.sort select option { background: var(--bg); color: var(--text); }
+.resbar:not(.has) .sort { visibility: hidden; }
 
 /* gallery */
 .results {
@@ -200,7 +208,18 @@ footer .grow { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: el
     </form>
     <div class="filters" id="filters"></div>
     <div class="hints"><span><kbd>↵</kbd> cari</span><span><kbd>←</kbd><kbd>→</kbd> pilih</span><span><kbd>/</kbd> fokus</span><span><kbd>Alt</kbd><kbd>Space</kbd> buka dari mana saja</span></div>
-    <div class="meta" id="meta"></div>
+    <div class="resbar" id="resbar"><div class="meta" id="meta"></div>
+      <label class="sort">Urutkan
+        <select id="sort">
+          <option value="rel">Paling relevan</option>
+          <option value="new">Terbaru</option>
+          <option value="old">Terlama</option>
+          <option value="name">Nama A–Z</option>
+          <option value="big">Terbesar</option>
+          <option value="small">Terkecil</option>
+        </select>
+      </label>
+    </div>
     <div class="results" id="results"></div>
   </main>
 
@@ -290,14 +309,49 @@ async function search() {
   $('meta').textContent = 'Mencari…';
   const t0 = performance.now();
   try {
-    results = await api('/api/search', { q, kind });
-    sel = results.length ? 0 : -1;
-    render();
-    $('meta').textContent = results.length ? `${results.length} hasil teratas · ${((performance.now() - t0) / 1000).toFixed(1)} dtk` : '';
-  } catch (e) { $('meta').textContent = ''; results = []; render(); toast(e.message); if (/API key/.test(e.message)) openDrawer(); }
+    ranked = await api('/api/search', { q, kind });
+    took = (performance.now() - t0) / 1000;
+    applySort();
+  } catch (e) { $('meta').textContent = ''; ranked = []; applySort(); toast(e.message); if (/API key/.test(e.message)) openDrawer(); }
 }
 
 const lastDir = d => d.split(/[\\/]/).filter(Boolean).pop() || d;
+// Similarity comes first: a sort only reorders the SORT_TOP most similar results, so less
+// relevant files never jump ahead just because they are newer, bigger or alphabetically first.
+const SORT_TOP = 20;
+let ranked = [], sortBy = 'rel', took = 0;
+try { sortBy = localStorage.getItem('sherlock.sort') || 'rel'; } catch {}
+$('sort').value = sortBy;
+if ($('sort').value !== sortBy) { sortBy = 'rel'; $('sort').value = 'rel'; }
+const SORTS = {
+  rel: null,
+  new: (a, b) => b.mtime - a.mtime,
+  old: (a, b) => a.mtime - b.mtime,
+  name: (a, b) => a.name.localeCompare(b.name, 'id', { numeric: true, sensitivity: 'base' }),
+  big: (a, b) => b.size - a.size,
+  small: (a, b) => a.size - b.size,
+};
+function applySort() {
+  results = SORTS[sortBy] ? ranked.slice(0, SORT_TOP).sort(SORTS[sortBy]) : ranked;
+  sel = results.length ? 0 : -1;
+  $('resbar').classList.toggle('has', ranked.length > 1);
+  const opt = $('sort').selectedOptions[0].textContent, label = opt[0].toLowerCase() + opt.slice(1);
+  $('meta').textContent = !results.length ? ''
+    : SORTS[sortBy] ? `${results.length} paling relevan, diurutkan ${label} · ${took.toFixed(1)} dtk`
+    : `${results.length} hasil teratas · ${took.toFixed(1)} dtk`;
+  render();
+  if (results.length) $('results').scrollTop = 0;
+}
+$('sort').onchange = () => {
+  sortBy = $('sort').value;
+  try { localStorage.setItem('sherlock.sort', sortBy); } catch {}
+  applySort();
+};
+const fmtDate = s => s ? new Date(s * 1000).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+// The small figure on each card follows the sort: date, size, or match %.
+const cardStat = r => sortBy === 'new' || sortBy === 'old' ? fmtDate(r.mtime)
+  : sortBy === 'big' || sortBy === 'small' ? fmtSize(r.size)
+  : Math.round(Math.min(r.score, 1) * 100) + '%';
 function render() {
   if (!results.length) { $('results').innerHTML = `<div class="nores">Tidak ada hasil.</div>`; return; }
   $('results').innerHTML = results.map((r, i) => {
@@ -306,10 +360,10 @@ function render() {
     const media = `<div class="tile"><span>${esc(ext)}</span></div>` + (r.kind === 'gambar' || isPage
       ? `<img loading="lazy" alt="" class="${isPage ? 'page' : ''}" src="/api/thumb?t=${token}&p=${encodeURIComponent(r.path)}" onload="this.classList.add('ok')" onerror="this.remove()">`
       : '');
-    return `<div class="card${i === sel ? ' sel' : ''}" data-i="${i}" title="${esc(r.path)}&#10;${fmtSize(r.size)}${r.mode === 'nama' ? ' · dicari dari nama saja' : ''}">
+    return `<div class="card${i === sel ? ' sel' : ''}" data-i="${i}" title="${esc(r.path)}&#10;${fmtSize(r.size)} · ${fmtDate(r.mtime)}${r.mode === 'nama' ? ' · dicari dari nama saja' : ''}">
       <div class="thumb">${media}<div class="acts"><button class="act" data-a="reveal">Lokasi</button><button class="act" data-a="open">Buka</button></div></div>
       <div class="info"><div class="name">${esc(r.name)}</div>
-        <div class="sub"><span class="dir">${esc(lastDir(r.dir))}</span><span class="score">${Math.round(Math.min(r.score, 1) * 100)}%</span></div></div>
+        <div class="sub"><span class="dir">${esc(lastDir(r.dir))}</span><span class="score">${cardStat(r)}</span></div></div>
     </div>`;
   }).join('');
 }
