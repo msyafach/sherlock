@@ -199,7 +199,7 @@ footer .grow { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: el
       <kbd>/</kbd>
     </form>
     <div class="filters" id="filters"></div>
-    <div class="hints"><span><kbd>↵</kbd> cari</span><span><kbd>←</kbd><kbd>→</kbd> pilih</span><span><kbd>/</kbd> fokus</span></div>
+    <div class="hints"><span><kbd>↵</kbd> cari</span><span><kbd>←</kbd><kbd>→</kbd> pilih</span><span><kbd>/</kbd> fokus</span><span><kbd>Alt</kbd><kbd>Space</kbd> buka dari mana saja</span></div>
     <div class="meta" id="meta"></div>
     <div class="results" id="results"></div>
   </main>
@@ -436,6 +436,11 @@ async function poll() {
     if (!cfg.has_key) openDrawer();
   } catch (e) { $('foot').textContent = e.message; }
 })();
+// Called by the app on the global Alt+Space hotkey
+window.sherlockFocus = () => {
+  document.body.classList.remove('open');
+  $('q').focus(); $('q').select();
+};
 // "/" jumps to the search box from anywhere
 document.addEventListener('keydown', e => {
   if (e.key === '/' && !/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)) { e.preventDefault(); $('q').focus(); $('q').select(); }

@@ -13,6 +13,7 @@ Sherlock indexes a folder once, stores the embeddings locally, and then searches
 - **API key rotation.** You can add as many Gemini API keys as you like. Sherlock uses them in turn and moves to the next key when one hits its rate limit or daily quota.
 - **Excluded folders.** You can skip folders that hold datasets, source code or game data, so they don't use up your quota or clutter the results.
 - **Gallery results** with image thumbnails, filters by type, and keyboard navigation.
+- **Always at hand.** Press **Alt+Space** anywhere in Windows to bring Sherlock up with the search box focused. Minimizing or closing the window keeps Sherlock running in the notification area (tray).
 
 ## Installation
 
@@ -50,6 +51,7 @@ Run the application with the following command:
 1. Open **Pengaturan** (Settings) and paste a Gemini API key. You can create one at [aistudio.google.com/apikey](https://aistudio.google.com/apikey). Add more keys to get more daily quota.
 2. Pick the folder to index (it defaults to `Downloads`), adjust **Folder yang dikecualikan** (excluded folders) if you need to, and click **Mulai index** (start indexing).
 3. Type what you're looking for in plain language. Double-click a result to open it, or use **Lokasi** to show it in Explorer. The arrow keys and Enter work too.
+4. Minimize or close the window and Sherlock stays in the tray. Press **Alt+Space** or click the tray icon to bring it back, and press **Alt+Space** again to hide it. To quit, right-click the tray icon and choose **Keluar** (quit).
 
 ### What gets indexed
 

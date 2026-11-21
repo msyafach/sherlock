@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"log"
 	"net"
 	"net/http"
 	"os"
@@ -186,7 +187,16 @@ func main() {
 		if w != nil {
 			defer w.Destroy()
 			w.Navigate(url)
+			// Minimize/close hide Sherlock to the tray; Alt+Space or the tray icon bring it back
+			// with the search box focused. "Keluar" in the tray menu really quits.
+			t := startTray(uintptr(w.Window()),
+				func() { w.Dispatch(func() { w.Eval("window.sherlockFocus && sherlockFocus()") }) },
+				func() { w.Dispatch(w.Terminate) })
+			if !t.HotkeyOK {
+				log.Print("Alt+Space tidak bisa didaftarkan (dipakai aplikasi lain?)")
+			}
 			w.Run()
+			t.Remove()
 			a.store.Cancel()
 			stopOffice()
 			time.Sleep(300 * time.Millisecond)
